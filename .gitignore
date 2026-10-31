@@ -1,0 +1,9 @@
+*.lock
+osm_tmp_*
+*.part
+*.part*
+PLAN.md
+*.pyc
+__pycache__/
+.pytest_cache/
+dev/

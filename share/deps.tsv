@@ -1,0 +1,36 @@
+# lmap's dependencies: the ONE list. install.sh checks/installs from it, README's Deps section is generated from it
+# (python3 share/deps.py readme --write), tests/t_deps.py fails if code uses a tool or module not listed here.
+# kind	name	apt package	group	what for
+cmd	python3	python3	core	runs lmap (3.11+)
+cmd	bash	bash	core	GRASS terrain steps
+cmd	gdalinfo	gdal-bin	core	all raster/vector work (gdalwarp, ogr2ogr, gdal_translate ...)
+cmd	gdalwarp	gdal-bin	core	-
+cmd	gdal_translate	gdal-bin	core	-
+cmd	gdalbuildvrt	gdal-bin	core	-
+cmd	gdaladdo	gdal-bin	core	-
+cmd	gdal_edit.py	gdal-bin	core	-
+cmd	gdaltransform	gdal-bin	core	-
+cmd	gdal_rasterize	gdal-bin	core	-
+cmd	gdal_contour	gdal-bin	core	-
+cmd	gdaldem	gdal-bin	core	-
+cmd	gdal_viewshed	gdal-bin	core	-
+cmd	ogr2ogr	gdal-bin	core	-
+cmd	ogrinfo	gdal-bin	core	-
+py	osgeo	python3-gdal	core	GDAL from Python
+py	numpy	python3-numpy	core	raster maths
+cmd	unzip	unzip	core	zipped downloads
+cmd	rsync	rsync	core	copies to the data root / USB
+cmd	git	git	optional	export: copy only the tool's tracked files to the USB (without git: .gitignore rules)
+py	qgis	python3-qgis	maps	map, print, area and state projects (Ubuntu: universe; open them with the qgis desktop app)
+py	scipy	python3-scipy	maps	terrain maths
+py	PIL	python3-pil	maps	image output
+py	matplotlib	python3-matplotlib	maps	print legends and charts
+cmd	pdftoppm	poppler-utils	maps	map sheet checks
+cmd	grass	grass-core	terrain	viewshed and route extras
+cmd	7z	p7zip-full	export	export archive check
+py	cryptography	python3-cryptography	export	export --encrypt
+cmd	osmium	osmium-tool	optional	faster OSM cuts (falls back to ogr2ogr)
+cmd	systemd-run	-	optional	systemd (present on systemd distros): keeps big builds under 80% of RAM, skipped if absent
+cmd	systemctl	-	optional	-
+cmd	nvidia-smi	-	optional	NVIDIA driver + CUDA toolkit: faster warps (CPU otherwise)
+cmd	nvcc	-	optional	-

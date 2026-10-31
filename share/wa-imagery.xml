@@ -1,0 +1,3 @@
+<GDAL_WMS><Service name="AGS"><ServerUrl>https://services.slip.wa.gov.au/public/rest/services/SLIP_Public_Services/Locate/MapServer</ServerUrl><BBoxOrder>xyXY</BBoxOrder><SRS>EPSG:3857</SRS><Layers>show:1</Layers><ImageFormat>jpg</ImageFormat><Transparent>false</Transparent></Service>
+<DataWindow><UpperLeftX>-20037508.34</UpperLeftX><UpperLeftY>20037508.34</UpperLeftY><LowerRightX>20037508.34</LowerRightX><LowerRightY>-20037508.34</LowerRightY><SizeX>268435456</SizeX><SizeY>268435456</SizeY></DataWindow>
+<Projection>EPSG:3857</Projection><BlockSizeX>2048</BlockSizeX><BlockSizeY>2048</BlockSizeY><BandsCount>3</BandsCount><MaxConnections>4</MaxConnections></GDAL_WMS>

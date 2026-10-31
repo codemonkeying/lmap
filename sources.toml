@@ -1,0 +1,965 @@
+# lmap source catalog. One [source.<id>] per dataset.
+# Paths are relative to the data root (--root / LMAP_ROOT / config root=). Layout:
+#   data/australia/             national data (elevation, OSM, GA maps, australia.qgz)
+#   data/australia/queensland/  one folder per state: its statewide files + <state>.qgz
+#   data/moon/                  the Moon
+#   areas/<country>/<state>/NAME, maps/<country>/<state>/NAME   lmap area create / lmap map output (self-contained)
+#   apps/                       phone app data (OsmAnd)
+# out  = the finished file in the data root. Tiled downloads land in the local tile cache (config tiles=, default
+#        <tmp>/lmap-UID/tiles/<dest>) and are deleted once `out` is built; a re-run resumes from the cache.
+# xml  = tile-server definition, relative to the lmap tool (share/).
+# template = true: not stored; area create fetches it for an area's extent.
+# kind: copernicus | tcc-aerial | url | wms-tiles | s2-worldcover | osm-clip | arcgis | qld-tides | manual | build-input (read by a project build, not fetched alone)
+# Server notes (outages, quirks): see SERVER NOTES at the end of this file.
+
+[source.dem-au-90m]
+title   = "Copernicus DEM 90m, all of Australia"
+kind    = "copernicus"
+res     = 90                     # 90 -> COG_30 bucket, 30 -> COG_10 bucket
+lat     = [10, 44]               # degrees SOUTH, inclusive
+lon     = [112, 154]             # degrees EAST, inclusive
+dest    = "dem-au-90m"
+out     = "data/australia/dem-90m.cog.tif"
+licence = "Copernicus DEM licence (free, attribution: (c) DLR e.V. 2010-2014 and (c) Airbus 2014-2018, provided under COPERNICUS by the EU and ESA)"
+home    = "https://registry.opendata.aws/copernicus-dem/"
+est_gb  = 3
+
+[source.dem-au-30m]
+title   = "Copernicus DEM 30m, all of Australia"
+kind    = "copernicus"
+res     = 30
+lat     = [9, 44]                # degrees SOUTH, inclusive
+lon     = [112, 154]             # degrees EAST, inclusive
+dest    = "dem-au-30m"
+out     = "data/australia/dem-30m.cog.tif"
+max_conns = 160                  # far bucket: speed comes from many connections (see SERVERS slots in lmaplib/00_base.py)
+licence = "Copernicus DEM licence (see dem-au-90m)"
+home    = "https://registry.opendata.aws/copernicus-dem/"
+est_gb  = 25
+
+[source.dem-se-aus-30m]
+title   = "Copernicus DEM 30m, SE Australia"
+kind    = "copernicus"
+res     = 30
+lat     = [34, 44]
+lon     = [140, 150]
+dest    = "dem-se-aus-30m"
+out     = "data/australia/dem-SE-30m.cog.tif"
+licence = "Copernicus DEM licence (see dem-au-90m)"
+home    = "https://registry.opendata.aws/copernicus-dem/"
+est_gb  = 2.6
+
+[source.dem-qld-30m]
+title   = "Copernicus DEM 30m, all of QLD"
+kind    = "copernicus"
+res     = 30
+lat     = [9, 29]
+lon     = [137, 153]
+dest    = "dem-qld-30m"
+out     = "data/australia/queensland/dem-30m.cog.tif"
+licence = "Copernicus DEM licence (see dem-au-90m)"
+home    = "https://registry.opendata.aws/copernicus-dem/"
+est_gb  = 7
+
+[source.aerial-tsv-2019]
+title   = "Townsville City Council aerial 2019 (10cm source, stored resampled)"
+kind    = "tcc-aerial"
+year    = 2019
+out_res = 0.5                    # metres per pixel stored on disk
+dest    = "aerial-tsv-2019"
+out     = "data/australia/queensland/aerial-townsville-2019-50cm.cog.tif"
+licence = "CC BY 4.0 - attribute Townsville City Council"
+home    = "https://dashboards.townsville.qld.gov.au/aerialphotography"
+est_gb  = 4                      # at 0.5 m; source download is ~394 GB
+
+[source.osm-water]
+title   = "OSM water polygons (sea), clipped to Australia (osmdata.openstreetmap.de; sea fill on topo prints)"
+kind    = "vector-zip"
+urls    = ["https://osmdata.openstreetmap.de/download/water-polygons-split-4326.zip"]
+shp     = "water-polygons-split-4326/water_polygons.shp"
+layer   = "sea"
+bbox    = [112, -44.5, 154.5, -9]  # the zip is the whole world (~0.9 GB); keep Australia only
+dest    = "data/australia/osm-water-polygons.gpkg"
+licence = "ODbL 1.0 - (c) OpenStreetMap contributors"
+home    = "https://osmdata.openstreetmap.de/data/water-polygons.html"
+est_gb  = 0.3
+
+[source.osm-au]
+title   = "OpenStreetMap, all of Australia (Geofabrik .osm.pbf)"
+kind    = "url"
+urls    = ["https://download.geofabrik.de/australia-oceania/australia-latest.osm.pbf"]
+dest    = "data/australia/osm"
+licence = "ODbL 1.0 - (c) OpenStreetMap contributors"
+home    = "https://download.geofabrik.de/australia-oceania.html"
+est_gb  = 1
+
+[source.osm-australia]
+title   = "OSM all Australia: places, roads, waterways, indexed (fast in QGIS; used by australia.qgz and areas)"
+kind    = "osm-clip"
+from    = "data/australia/osm/australia-latest.osm.pbf"
+dest    = "data/australia/osm/osm-australia.gpkg"
+indexes = ["roads(highway)", "places(place)"]
+licence = "ODbL 1.0 - (c) OpenStreetMap contributors"
+home    = "https://www.openstreetmap.org/copyright"
+est_gb  = 1.6
+
+[source.osm-australia.layers.places]
+from   = "points"
+where  = "place IN ('city','town','village','suburb','hamlet','locality')"
+select = "name,place"
+
+[source.osm-australia.layers.roads]
+from   = "lines"
+where  = "highway IS NOT NULL"
+select = "name,highway"
+
+[source.osm-australia.layers.waterways]
+from   = "lines"
+where  = "waterway IN ('river','stream','canal')"
+select = "name,waterway"
+
+[source.osmand-au]
+title   = "OsmAnd offline maps, all 8 states/territories (phone app)"
+kind    = "url"
+base    = "https://download.osmand.net/download?standard=yes&file="
+files   = [
+  "Australia-oceania_australian-capital-territory_australia-oceania_2.obf.zip",
+  "Australia-oceania_new-south-wales_australia-oceania_2.obf.zip",
+  "Australia-oceania_northern-territory_australia-oceania_2.obf.zip",
+  "Australia-oceania_queensland_australia-oceania_2.obf.zip",
+  "Australia-oceania_south-australia_australia-oceania_2.obf.zip",
+  "Australia-oceania_tasmania_australia-oceania_2.obf.zip",
+  "Australia-oceania_victoria_australia-oceania_2.obf.zip",
+  "Australia-oceania_western-australia_australia-oceania_2.obf.zip",
+]
+dest    = "apps/osmand"
+licence = "ODbL 1.0 - (c) OpenStreetMap contributors"
+home    = "https://osmand.net/list"
+est_gb  = 1.5
+
+[source.ga-ref-maps]
+title   = "Geoscience Australia general reference maps (A3 1:15M, A4 1:20M PDFs)"
+kind    = "manual"
+dest    = "data/australia/reference-maps"
+licence = "CC BY 4.0 - Geoscience Australia"
+home    = "https://www.ga.gov.au/data-pubs/maps"
+est_gb  = 0.05
+
+# ---- Queensland Government ArcGIS REST (spatial-gis.information.qld.gov.au): area templates. An area
+# clips the statewide copy (<key>-state, below) when present, else queries these live for its extent. Licence for each layer: CC BY 4.0 (State of Queensland) unless noted.
+
+[source.qld-water-tsv]
+title   = "QLD water: registered bores, gauging stations, waterholes/rockholes/dams, watercourses (Townsville region)"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/InlandWaters/GroundAndSurfaceWaterMonitoring/MapServer"
+layers  = { bores = 1, gauges_open = 13 }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland (Department of Local Government, Water and Volunteers)"
+home    = "https://www.data.qld.gov.au/dataset/groundwater-database-queensland"
+est_gb  = 0.01
+
+[source.qld-surface-water-tsv]
+title   = "QLD surface water: waterholes, rockholes, dams, reservoirs, watercourse lines (Townsville region)"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/InlandWaters/WaterCoursesAndBodies/MapServer"
+layers  = { farm_dams = 20, rockholes = 21, waterholes = 22, waterfalls = 23, lakes = 27, reservoirs = 28, watercourses = 33 }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 0.1
+
+[source.qld-hazard-tsv]
+title   = "QLD coastal hazards: storm tide high/medium hazard, erosion prone areas (Townsville region)"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/PlanningCadastre/CoastalManagement/MapServer"
+layers  = { storm_tide_high = 11, storm_tide_medium = 12, erosion_distance = 7, erosion_sea_level_rise = 8 }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland (Department of Environment)"
+home    = "https://www.data.qld.gov.au/dataset/storm-tide-queensland-series"
+est_gb  = 0.05
+
+[source.qld-infra-tsv]
+title   = "QLD infrastructure: emergency services, community facilities, infrastructure, storage tanks, bridges (Townsville region)"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Structure/PhysicalInfrastructure/MapServer"
+layers  = { emergency = 30, community = 20, infrastructure_pts = 40, infrastructure_lines = 110, storage_tanks = 270, water_storage = 280 }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 0.02
+
+[source.qld-roads-tsv]
+title   = "QLD roads, tracks and bridges, official state data (Townsville region)"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Transportation/RoadsAndTracks/MapServer"
+layers  = { roads_tracks = 10, bridges = 22 }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland (Department of Resources)"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 0.1
+
+[source.qld-contours-tsv]
+title   = "QLD contours: LiDAR 5m interval (Townsville region; ~82k lines)"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Elevation/Contours/MapServer"
+layers  = { contour_lidar_5m = 20 }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 0.3
+
+[source.qld-cadastre-tsv]
+title   = "QLD cadastre: land parcels / property boundaries (Townsville region; ~158k parcels)"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/PlanningCadastre/LandParcelPropertyFramework/MapServer"
+layers  = { parcels = 4 }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland (Department of Resources). DCDB updates ceased 18 Apr 2026."
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 0.3
+
+[source.lidar-tsv]
+title   = "LiDAR bare-earth DEM 1m/5m (Townsville) via ELVIS - order by area, emailed links"
+kind    = "manual"
+dest    = "."
+licence = "CC BY 4.0 - Geoscience Australia / State of Queensland"
+home    = "https://elevation.fsdf.org.au/  (draw box -> select 'QLD' 1m DEM -> order). The Townsville City Council 2019 LiDAR is also free: https://dashboards.townsville.qld.gov.au/aerialphotography"
+est_gb  = 2
+
+[source.qtopo-tsv]
+title   = "QTopo 1:25k / 1:50k topographic map sheets (PDF) for Townsville - print + laminate"
+kind    = "manual"
+dest    = "."
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qtopo.information.qld.gov.au/  (click a sheet -> 'Topo map' / 'Image topo map' PDF). Sheet index: https://www.data.qld.gov.au/dataset/queensland-map-sheet-key-maps-series"
+est_gb  = 0.2
+
+[source.tides-tsv]
+title   = "Tide tables: Townsville + Cape Ferguson (yearly PDF predictions)"
+kind    = "manual"
+dest    = "."
+licence = "BoM / Maritime Safety Queensland - personal use"
+restricted = true            # licence limits sharing (NC/ND/personal use): export warns
+home    = "https://www.msq.qld.gov.au/Tides/Tide-tables  and  http://www.bom.gov.au/oceanography/projects/ntc/ntc.shtml"
+est_gb  = 0.01
+
+# ---- Statewide QLD Government layers, stored offline (`lmap qld fetch --tier essentials|everything`).
+# `lmap area create` clips these locally when present (no internet needed), else queries live.
+# id must be <area key>-state (area key = the -tsv id without "-tsv"). Resumable (checkpoint in scratch).
+
+[source.qld-water-state]
+title   = "QLD statewide: registered bores (185k), open river gauges"
+kind    = "arcgis"
+tier    = "essentials"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/InlandWaters/GroundAndSurfaceWaterMonitoring/MapServer"
+layers  = { bores = 1, gauges_open = 13 }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-water-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland (Department of Local Government, Water and Volunteers)"
+home    = "https://www.data.qld.gov.au/dataset/groundwater-database-queensland"
+est_gb  = 0.15
+est_h   = 0.8
+
+[source.qld-surface-water-state]
+title   = "QLD statewide: waterholes, rockholes, waterfalls, farm dams, lakes (essentials; reservoirs+watercourses in everything)"
+kind    = "arcgis"
+tier    = "essentials"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/InlandWaters/WaterCoursesAndBodies/MapServer"
+layers  = { waterholes = 22, rockholes = 21, waterfalls = 23, farm_dams = 20, lakes = 27 }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-surface-water-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 0.3
+est_h   = 0.8
+
+[source.qld-infra-state]
+title   = "QLD statewide: emergency services, community facilities, tanks, water storage"
+kind    = "arcgis"
+tier    = "essentials"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Structure/PhysicalInfrastructure/MapServer"
+layers  = { emergency = 30, community = 20, infrastructure_pts = 40, infrastructure_lines = 110, storage_tanks = 270, water_storage = 280 }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-infra-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 0.01
+est_h   = 0.05
+
+[source.qld-hazard-state]
+title   = "QLD statewide: storm tide high/medium, coastal erosion"
+kind    = "arcgis"
+tier    = "essentials"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/PlanningCadastre/CoastalManagement/MapServer"
+layers  = { storm_tide_high = 11, storm_tide_medium = 12, erosion_distance = 7, erosion_sea_level_rise = 8 }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-hazard-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 1.0
+est_h   = 1.5
+
+[source.qld-roads-state]
+title   = "QLD statewide: roads & tracks (563k), bridges"
+kind    = "arcgis"
+tier    = "essentials"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Transportation/RoadsAndTracks/MapServer"
+layers  = { roads_tracks = 10, bridges = 22 }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-roads-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 0.6
+est_h   = 1.0
+
+[source.qld-surface-water-all-state]
+title   = "QLD statewide: reservoirs (243k) + all watercourse lines (4M)"
+kind    = "arcgis"
+tier    = "everything"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/InlandWaters/WaterCoursesAndBodies/MapServer"
+layers  = { reservoirs = 28, watercourses = 33 }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-surface-water-all-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 5
+est_h   = 5
+
+[source.qld-contours-state]
+title   = "QLD statewide: LiDAR 5m contours (1.65M lines, where LiDAR exists)"
+kind    = "arcgis"
+tier    = "everything"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Elevation/Contours/MapServer"
+layers  = { contour_lidar_5m = 20 }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-contours-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 6
+est_h   = 3
+
+[source.qld-cadastre-state]
+title   = "QLD statewide: property parcels DCDB (3.5M)"
+kind    = "arcgis"
+tier    = "everything"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/PlanningCadastre/LandParcelPropertyFramework/MapServer"
+layers  = { parcels = 4 }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-cadastre-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://qldspatial.information.qld.gov.au"
+est_gb  = 5
+est_h   = 4
+
+[source.qld-parks-tsv]
+title   = "QLD protected areas & state forests, park roads/fire trails, walking/horse/MTB trails (Townsville region)"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksTerrestrialProtectedAreas/MapServer"
+layers  = { protected_areas = 10, park_roads = 2, walking_tracks = 5, horse_trails = 7, mtb_trails = 8, trailbike_trails = 9 }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland (Department of Environment, Tourism, Science and Innovation)"
+home    = "https://www.data.qld.gov.au/dataset/protected-areas-of-queensland-series"
+est_gb  = 0.02
+
+[source.qld-parks-state]
+title   = "QLD statewide: protected areas & state forests (1k), park roads/fire trails (80k), walking/horse/MTB/trailbike trails"
+kind    = "arcgis"
+tier    = "essentials"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksTerrestrialProtectedAreas/MapServer"
+layers  = { protected_areas = 10, park_roads = 2, walking_tracks = 5, horse_trails = 7, mtb_trails = 8, trailbike_trails = 9 }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-parks-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland (Department of Environment, Tourism, Science and Innovation)"
+home    = "https://www.data.qld.gov.au/dataset/protected-areas-of-queensland-series"
+est_gb  = 0.2
+est_h   = 0.3
+
+[source.sat-qld-s2]
+title   = "Sentinel-2 2021 cloud-free composite (ESA WorldCover), all of Queensland, 10m RGB (offline copy for areas)"
+kind    = "s2-worldcover"
+bbox    = [138, -29, 154, -9]          # minlon, minlat, maxlon, maxlat; land tiles only
+dest    = "sat-qld-s2"
+out     = "data/australia/queensland/sat-10m.cog.tif"
+licence = "CC BY 4.0 - ESA WorldCover project 2021 / contains modified Copernicus Sentinel data (2021)"
+home    = "https://esa-worldcover.org/en/data-access"
+est_gb  = 14                           # tiles ~6 GB + COG ~6 GB; download ~90 GB passes through scratch 1 tile at a time
+
+# ---- flood + fire (QLD Government). Area clips: qld-flood-tsv / qld-fire-tsv pattern (live, small boxes);
+# statewide offline copies for `lmap qld fetch --tier everything`.
+[source.qld-flood-tsv]
+title   = "QLD flood: FloodCheck 1% AEP + extreme-event extents, rapid hazard assessment, 2011 town floodlines"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/FloodCheck"
+layers  = { flood_1pc_aep = "BasinOnePercentAEP/MapServer/1", flood_extreme = "BasinExtremeEvents/MapServer/1", flood_rapid_hazard = "RapidHazardAssessment/MapServer/0", floodline_2011 = "../InlandWaters/FloodLines/MapServer/14" }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://floodcheck.information.qld.gov.au"
+est_gb  = 0.05
+
+[source.qld-flood-state]
+title   = "QLD statewide: FloodCheck flood extents (1% AEP, extreme), rapid hazard assessment, 2011 floodlines"
+kind    = "arcgis"
+tier    = "everything"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/FloodCheck"
+layers  = { flood_1pc_aep = "BasinOnePercentAEP/MapServer/1", flood_extreme = "BasinExtremeEvents/MapServer/1", flood_rapid_hazard = "RapidHazardAssessment/MapServer/0", floodline_2011 = "../InlandWaters/FloodLines/MapServer/14" }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-flood-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://floodcheck.information.qld.gov.au"
+est_gb  = 0.3
+est_h   = 0.5
+
+[source.qld-fire-tsv]
+title   = "QLD fire: QPWS burnt areas (fire history) + current-year fire scars (satellite)"
+kind    = "arcgis"
+template = true
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment"
+layers  = { burnt_areas = "ParksFireHistory/MapServer/0", fire_scars = "FireScarMapping/MapServer/0" }
+bbox    = [145.6, -20.3, 147.6, -18.7]
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://www.data.qld.gov.au/dataset/fire-scar-mapping-queensland-series"
+est_gb  = 0.05
+
+[source.qld-fire-state]
+title   = "QLD statewide: QPWS burnt areas + current fire scars"
+kind    = "arcgis"
+tier    = "everything"
+url     = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment"
+layers  = { burnt_areas = "ParksFireHistory/MapServer/0", fire_scars = "FireScarMapping/MapServer/0" }
+bbox    = [137.9, -29.2, 153.6, -9.0]
+dest    = "data/australia/queensland/qld-fire-state.gpkg"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://www.data.qld.gov.au/dataset/fire-scar-mapping-queensland-series"
+est_gb  = 1.5
+est_h   = 2
+
+[source.topo-qld-20m]
+title   = "QLD Government topographic basemap (QldMap_Topo), all of QLD at ~19 m (zoom 13), offline"
+kind    = "wms-tiles"
+xml     = "share/qld-topo.xml"
+bbox    = [138, -29, 154, -9]
+res_m   = 19.109                       # EPSG:3857 metres = zoom 13 tiles
+dest    = "topo-qld-20m"
+out     = "data/australia/queensland/topo-20m.cog.tif"
+licence = "CC BY 4.0 - State of Queensland"
+home    = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Basemaps/QldMap_Topo/MapServer"
+est_gb  = 12
+
+[source.aerial-tsv-latest]
+title   = "QLD State aerial, newest capture each place (2019-22, 10-20cm native) at 50cm: Paluma State Forest to Dalbeg"
+kind    = "wms-tiles"
+xml     = "share/qld-imagery.xml"
+bbox    = [146.05, -20.30, 147.35, -18.85]
+step    = 0.1                           # 0.1-degree work units (~21000x21000 px each)
+res_m   = 0.5
+dest    = "aerial-tsv-latest"
+out     = "data/australia/queensland/aerial-townsville-latest-50cm.cog.tif"
+licence = "State of Queensland aerial imagery (SISP) mosaic, released for public use 3 years after capture; parts are Planet 2017 fill (restricted)"
+restricted = true            # licence limits sharing (NC/ND/personal use): export warns
+home    = "https://spatial-img.information.qld.gov.au/arcgis/rest/services/Basemaps/LatestStateProgram_AllUsers/ImageServer"
+est_gb  = 25
+est_h   = 15
+
+[source.sat-qld-s2-2025]
+title   = "Sentinel-2 cloudless 2025 (EOX s2cloudless), all of Queensland, 10m RGB"
+kind    = "wms-tiles"
+xml     = "share/eox-s2cloudless-2025.xml"
+bbox    = [138, -29, 154, -9]
+res_m   = 9.5546                        # zoom 14 in EPSG:3857
+dest    = "sat-qld-s2-2025"
+out     = "data/australia/queensland/sat-10m-2025.cog.tif"
+licence = "CC BY-NC-SA 4.0 - Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2025). Personal, non-commercial"
+restricted = true            # licence limits sharing (NC/ND/personal use): export warns
+home    = "https://s2maps.eu"
+est_gb  = 7
+est_h   = 10
+
+[source.sat-qld-2m4]
+title   = "QLD imagery basemap (State aerial program, 2.4m Planet 2017 fill), greater Townsville (Ingham-Charters Towers-Bowen) at ~2.4 m (zoom 16), offline. NOT fetched by default"
+kind    = "wms-tiles"
+xml     = "share/qld-imagery.xml"
+bbox    = [145, -21, 148, -18]        # whole state ~60 GB (11 M tiles, ~half sea); widen here
+res_m   = 2.3887                       # EPSG:3857 metres = zoom 16 tiles
+dest    = "sat-qld-2m4"
+out     = "data/australia/queensland/sat-2m4.cog.tif"
+licence = "State of Queensland aerial (open use >3 yrs old); Planet fill (c) Planet Labs, all rights reserved - personal offline use, don't redistribute"
+restricted = true            # licence limits sharing (NC/ND/personal use): export warns
+home    = "https://spatial-img.information.qld.gov.au/arcgis/rest/services/Basemaps/LatestStateProgram_AllUsers/ImageServer"
+est_gb  = 4                            # 9 1-degree cells, ~35k tiles / ~0.4 GB each on land (measured ~11 KB/tile)
+
+[source.aerial-nsw-bm]
+title   = "NSW aerial (Spatial Services NSW_Imagery, ~15 cm towns / ~60 cm rural native) at ~50 cm ground (zoom 18): Blue Mountains, Lithgow to Penrith"
+kind    = "wms-tiles"
+xml     = "share/nsw-imagery.xml"
+bbox    = [150.1, -33.9, 150.7, -33.45]   # widen here (each 0.1 degree ~ +30-40k tiles, ~0.7 GB)
+step    = 0.1
+res_m   = 0.597164                         # EPSG:3857 metres = zoom 18 tiles (~0.5 m on the ground at 34 S): no resample
+dest    = "aerial-nsw-bm"
+out     = "data/australia/new-south-wales/aerial-bluemountains-50cm.cog.tif"
+licence = "CC BY 4.0 - (c) Spatial Services NSW (DCS)"
+home    = "https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_Imagery/MapServer"
+est_gb  = 4                                # ~173k z18 tiles
+est_h   = 1.5
+
+# ---- other states: area templates (fetched for each area's extent by `lmap area create`, never statewide).
+# role = sat|topo: which area layer it feeds; max_res = finest useful pixel (m) the server has.
+# Speeds measured 2026-10 (fresh tiles, no errors): NSW/TAS/SA tile servers ~40-60 tiles/s at 16 conns.
+# NSW statewide (Spatial Services NSW, FeatureServer, 2000/page, keyset paging, up to 16 OID ranges per layer, parallelism auto-tuned up to max_conns).
+# planimetricaccuracy = the state's own +/- m per feature (roads mostly 10, creeks 10-20); kept for the footer.
+[source.nsw-roads-state]
+title     = "NSW statewide: road segments (1.38M), fire trails (86k)"
+kind      = "arcgis"
+tier      = "essentials"
+url       = "https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Transport_Theme/FeatureServer"
+layers    = { roads = 5, fire_trails = 9 }
+fields    = { roads = "objectid,classsubtype,functionhierarchy,roadnamebase,roadnametype,surface,operationalstatus,planimetricaccuracy,capturesourcecode", fire_trails = "objectid,classsubtype,operationalstatus,planimetricaccuracy,capturesourcecode" }
+dest      = "data/australia/new-south-wales/nsw-roads-state.gpkg"
+bbox      = [140.9, -37.6, 153.7, -28.1]
+statewide = true
+licence   = "CC BY 4.0 - (c) Spatial Services NSW (DCS)"
+home      = "https://portal.spatial.nsw.gov.au"
+est_gb    = 0.8
+est_h     = 0.3
+
+[source.nsw-water-state]
+title     = "NSW statewide: watercourses (2.7M lines), water areas (468k)"
+kind      = "arcgis"
+tier      = "essentials"
+url       = "https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Water_Theme/FeatureServer"
+layers    = { watercourses = 5, water_areas = 6 }
+fields    = "objectid,classsubtype,hydroname,hydronametype,perenniality,hydrotype,planimetricaccuracy,capturesourcecode"
+dest      = "data/australia/new-south-wales/nsw-water-state.gpkg"
+bbox      = [140.9, -37.6, 153.7, -28.1]
+statewide = true
+licence   = "CC BY 4.0 - (c) Spatial Services NSW (DCS)"
+home      = "https://portal.spatial.nsw.gov.au"
+est_gb    = 1.5
+est_h     = 0.5
+
+[source.nsw-contours-state]
+title     = "NSW statewide: topographic contours (1.7M lines)"
+kind      = "arcgis"
+tier      = "everything"
+url       = "https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Elevation_and_Depth_Theme/FeatureServer"
+layers    = { contours = 2 }
+fields    = "objectid,classsubtype,elevation,capturesourcecode,capturemethodcode,verticalaccuracy"
+dest      = "data/australia/new-south-wales/nsw-contours-state.gpkg"
+bbox      = [140.9, -37.6, 153.7, -28.1]
+statewide = true
+licence   = "CC BY 4.0 - (c) Spatial Services NSW (DCS)"
+home      = "https://portal.spatial.nsw.gov.au"
+est_gb    = 2
+est_h     = 0.5
+
+[source.nsw-dem-5m]
+title    = "NSW 5 m elevation (Spatial Services NSW_5M_Elevation, from LiDAR/photogrammetry): one seamless contour set for NSW areas"
+kind     = "manual"
+template = true
+role     = "dem5"
+url      = "https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_5M_Elevation/ImageServer"
+bbox     = [140.9, -37.6, 153.7, -28.1]
+max_res  = 5
+licence  = "CC BY 4.0 - (c) Spatial Services NSW (DCS)"
+home     = "https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_5M_Elevation/ImageServer"
+
+[source.nsw-cadastre-roads-state]
+title     = "NSW statewide: cadastre road centrelines (567k) - reference for measuring road accuracy"
+kind      = "arcgis"
+tier      = "everything"
+url       = "https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Land_Parcel_Property_Theme/FeatureServer"
+layers    = { road_centrelines = 1 }
+fields    = "rid,roadnamelabel"
+dest      = "data/australia/new-south-wales/nsw-cadastre-roads-state.gpkg"
+bbox      = [140.9, -37.6, 153.7, -28.1]
+statewide = true
+licence   = "CC BY 4.0 - (c) Spatial Services NSW (DCS)"
+home      = "https://portal.spatial.nsw.gov.au"
+est_gb    = 0.2
+est_h     = 0.1
+
+[source.nsw-survey-marks-state]
+title     = "NSW statewide: survey marks GDA2020 (282k) - surveyed ground control for measuring accuracy"
+kind      = "arcgis"
+tier      = "everything"
+url       = "https://portal.spatial.nsw.gov.au/server/rest/services/SurveyMarkGDA2020/FeatureServer"
+layers    = { marks = 0 }
+fields    = "OBJECTID,marktype,marknumber,markstatus,trigname,gdaclass,gdasourcetype,ahdclass,gdaposuncertainty_label,ahdheight_label"
+dest      = "data/australia/new-south-wales/nsw-survey-marks-state.gpkg"
+bbox      = [140.9, -37.6, 153.7, -28.1]
+statewide = true
+licence   = "CC BY 4.0 - (c) Spatial Services NSW (DCS)"
+home      = "https://portal.spatial.nsw.gov.au"
+est_gb    = 0.1
+est_h     = 0.1
+
+[source.nsw-imagery]
+title    = "NSW imagery (Spatial Services NSW_Imagery): aerial to ~15 cm in towns, ~60 cm rural. Also covers the ACT"
+kind     = "manual"
+template = true
+role     = "sat"
+xml      = "share/nsw-imagery.xml"
+bbox     = [140.9, -37.6, 153.7, -28.1]
+max_res  = 0.15
+licence  = "CC BY 4.0 - (c) Spatial Services NSW (DCS)"
+home     = "https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_Imagery/MapServer"
+
+[source.nsw-topo]
+title    = "NSW topographic basemap (NSW_Topo_Map), to ~2.4 m"
+kind     = "manual"
+template = true
+role     = "topo"
+xml      = "share/nsw-topo.xml"
+bbox     = [140.9, -37.6, 153.7, -28.1]
+max_res  = 2.4
+licence  = "CC BY 4.0 - (c) Spatial Services NSW (DCS)"
+home     = "https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_Topo_Map/MapServer"
+
+[source.tas-imagery]
+title    = "TAS orthophoto (theLIST Basemaps/Orthophoto), to ~30 cm"
+kind     = "manual"
+template = true
+role     = "sat"
+xml      = "share/tas-imagery.xml"
+bbox     = [143.5, -44.0, 148.6, -39.4]
+max_res  = 0.3
+licence  = "CC BY-NC-ND 3.0 AU - (c) State of Tasmania (personal, non-commercial, don't redistribute modified)"
+restricted = true            # licence limits sharing (NC/ND/personal use): export warns
+home     = "https://services.thelist.tas.gov.au/arcgis/rest/services/Basemaps/Orthophoto/MapServer"
+
+[source.tas-topo]
+title    = "TAS topographic basemap (theLIST Basemaps/Topographic), to ~0.6 m"
+kind     = "manual"
+template = true
+role     = "topo"
+xml      = "share/tas-topo.xml"
+bbox     = [143.5, -44.0, 148.6, -39.4]
+max_res  = 1.2
+licence  = "CC BY 3.0 AU - (c) State of Tasmania"
+home     = "https://services.thelist.tas.gov.au/arcgis/rest/services/Basemaps/Topographic/MapServer"
+
+[source.sa-topo]
+title    = "SA topographic basemap (Location SA Topographic_wmas), to ~0.6 m"
+kind     = "manual"
+template = true
+role     = "topo"
+xml      = "share/sa-topo.xml"
+bbox     = [129.0, -38.1, 141.0, -26.0]
+max_res  = 1.2
+licence  = "CC BY 4.0 - (c) Government of South Australia"
+home     = "https://location.sa.gov.au/arcgis/rest/services/BaseMaps/Topographic_wmas/MapServer"
+
+[source.wa-imagery]
+title    = "WA imagery (Landgate SLIP Locate): aerial mosaic. Slow server: 4 connections max (8 halves the speed)"
+kind     = "manual"
+template = true
+role     = "sat"
+xml      = "share/wa-imagery.xml"
+bbox     = [112.9, -35.2, 129.0, -13.6]
+max_res  = 0.3
+licence  = "(c) Western Australian Land Information Authority (Landgate) - personal use"
+restricted = true            # licence limits sharing (NC/ND/personal use): export warns
+home     = "https://services.slip.wa.gov.au/public/rest/services/SLIP_Public_Services/Locate/MapServer"
+
+[source.ga-topo]
+title    = "Geoscience Australia national topographic basemap (1:250k style), to ~38 m: topo for areas outside QLD/NSW/TAS/SA"
+kind     = "manual"
+template = true
+role     = "topo"
+xml      = "share/ga-topo.xml"
+bbox     = [112.0, -44.0, 154.0, -9.0]
+max_res  = 38
+licence  = "CC BY 4.0 - (c) Commonwealth of Australia (Geoscience Australia)"
+home     = "https://services.ga.gov.au/gis/rest/services/Topographic_Base_Map/MapServer"
+
+[source.au-s2-10m]
+title    = "Sentinel-2 cloudless 2025 (EOX s2cloudless), 10 m: area satellite anywhere in Australia without finer state imagery (NT, VIC, SA)"
+kind     = "manual"
+template = true
+role     = "sat"
+xml      = "share/eox-s2cloudless-2025.xml"
+bbox     = [112.0, -44.0, 154.0, -9.0]
+max_res  = 9.5546
+licence  = "CC BY-NC-SA 4.0 - Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2025). Personal, non-commercial"
+restricted = true            # licence limits sharing (NC/ND/personal use): export warns
+home     = "https://s2maps.eu"
+
+[source.sat-au-30m]
+title    = "DEA GeoMAD Landsat 8/9 2025 annual cloud-free mosaic, all of Australia at 30m (offline overview satellite)"
+kind     = "wms-tiles"
+xml      = "share/dea-landsat.xml"
+bbox     = [112, -44, 154, -10]
+res_m    = 30
+dest     = "sat-au-30m"
+out      = "data/australia/sat-30m.cog.tif"
+licence  = "CC BY 4.0 - (c) Commonwealth of Australia (Geoscience Australia), Digital Earth Australia"
+home     = "https://ows.dea.ga.gov.au"
+est_gb   = 4
+est_h    = 1
+# 0.12.6: built from DEA's public COGs on S3 (the WMS renders every request: ~11 h for Australia). Same product,
+# same simple_rgb style (dea-config style_c3_ls_cfg.py: scale 0..3000), lmap does the styling. fetch="gdal" = old WMS path.
+[source.sat-au-30m.stac]
+api        = "https://explorer.dea.ga.gov.au/stac"
+collection = "ga_ls8cls9c_gm_cyear_3"
+datetime   = "2025-01-01T00:00:00Z/2025-12-31T23:59:59Z"
+bands      = ["nbart_red", "nbart_green", "nbart_blue"]
+scale      = [0, 3000]
+nodata     = -999
+href_map   = {"s3://dea-public-data/" = "https://dea-public-data.s3.ap-southeast-2.amazonaws.com/"}
+
+[source.qld-tides]
+title   = "QLD tide predictions (Maritime Safety Queensland): high/low times + heights, ~80 gauges, this + next year"
+kind    = "qld-tides"
+kinds   = ["high-low"]                 # add "interval" for 10-minute curves (~1.7 MB per gauge-year)
+dest    = "data/australia/queensland/tides"
+licence = "CC BY 4.0 - State of Queensland (Maritime Safety Queensland)"
+home    = "https://www.msq.qld.gov.au/tides/open-data"
+est_gb  = 0.02
+
+[source.qld-topo]
+title   = "QLD Government topographic basemap (QldMap_Topo tiles): saved into each QLD area as topo.tif"
+kind    = "manual"
+xml     = "share/qld-topo.xml"
+licence = "CC BY 4.0 - State of Queensland (Department of Natural Resources and Mines, Manufacturing and Regional and Rural Development)"
+home    = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Basemaps/QldMap_Topo/MapServer"
+
+[source.lights-au]
+title    = "NASA Black Marble 2016: Earth at night, colour, 500m (Australia from the global D2 tile)"
+kind     = "file-clip"
+urls     = ["https://assets.science.nasa.gov/content/dam/science/esd/eo/images/imagerecords/144000/144898/BlackMarble_2016_D2_geo.tif"]
+bbox     = [112, -44, 154, -9]
+compress = "WEBP"
+quality  = 90
+dest     = "data/australia/lights-500m.cog.tif"
+licence  = "Public domain - NASA Earth Observatory (Black Marble 2016)"
+home     = "https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/"
+est_gb   = 0.1
+
+# ---- Moon (NASA LRO). Own projections (lunar), not used in the Australia map: moon/moon.qgz
+[source.moon-dem-118m]
+title     = "Moon elevation, whole Moon, 118m (LRO LOLA LDEM 2014, heights = value x 0.5 m)"
+kind      = "file-clip"
+urls      = ["https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LOLA_Global_LDEM_118m_Mar2014.tif"]
+compress  = "DEFLATE"
+predictor = 2
+dest      = "data/moon/dem-118m.cog.tif"
+licence   = "Public domain - NASA/GSFC LRO LOLA, USGS Astrogeology"
+home      = "https://astrogeology.usgs.gov/search/map/moon_lro_lola_dem_118m"
+est_gb    = 5
+
+[source.moon-photo-100m]
+title    = "Moon photo mosaic, whole Moon, 100m (LRO LROC WAC 2013)"
+kind     = "file-clip"
+urls     = ["https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif"]
+compress = "WEBP"                     # photo: webp= setting decides (JPEG with webp=no)
+quality  = 90
+dest     = "data/moon/photo-100m.cog.tif"
+licence  = "Public domain - NASA/GSFC/Arizona State University LROC, USGS Astrogeology"
+home     = "https://astrogeology.usgs.gov/search/map/moon_lro_lroc_wac_global_morphology_mosaic_100m"
+est_gb   = 2
+
+[source.moon-spole-20m]
+title     = "Moon south pole elevation, 80-90S, 20m (LOLA adjusted 2023)"
+kind      = "file-clip"
+urls      = ["https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_20MPP_ADJ.TIF"]
+compress  = "DEFLATE"
+predictor = 3
+dest      = "data/moon/spole-20m.cog.tif"
+licence   = "Public domain - NASA GSFC PGDA (Barker et al. 2023)"
+home      = "https://pgda.gsfc.nasa.gov/products/90"
+est_gb    = 2.7
+
+[source.moon-spole-5m]
+title     = "Moon south pole elevation, 87-90S, 5m (LOLA mosaic, Artemis landing region)"
+kind      = "file-clip"
+urls      = ["https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/87S/ldem_87s_5mpp.tif"]
+compress  = "DEFLATE"
+predictor = 3
+dest      = "data/moon/spole-5m.cog.tif"
+licence   = "Public domain - NASA GSFC PGDA (Barker et al. 2021)"
+home      = "https://pgda.gsfc.nasa.gov/products/81"
+est_gb    = 3.5
+
+# ---- QLD LiDAR for the AU 3D view (built by `lmap au project`, not fetched on its own: kind = "build-input")
+# Measured 2026-10-16: the ImageServer's exportImage renders on demand (~30-80 s / 2048 px, 502/504 under load);
+# its elevation CACHE (/tile/z/y/x) is pre-built: 257x257 px LERC (1 px overlap), ~45 KB, 0.1 s, z<=18 (0.6 m),
+# 16 connections ~135 tiles/s with no errors (4: 12/s + 502s; 32: no faster). Same heights as exportImage
+# (median 0.035 m). GDAL reads LERC as Byte unless told DATATYPE=Float32. Outside flown projects the cache is
+# 30 m SRTM fill, so only tiles over the coverage polygons are used.
+[source.lidar-qld]
+title     = "QLD LiDAR DEM (QldDem elevation cache), over the AU 3D view's box where flown"
+kind      = "build-input"
+url       = "https://spatial-img.information.qld.gov.au/arcgis/rest/services/Elevation/QldDem/ImageServer/tile/${z}/${y}/${x}"
+coverage  = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Elevation/ElevationProjectExtents/MapServer/200/query"
+cov_days  = 30                 # re-ask for new LiDAR projects this often
+max_zoom  = 18                 # 0.597 m; z19 is 404
+tile_px   = 257                # LERC tiles carry 1 px overlap with the next tile
+unit      = 16                 # tiles per side per work unit (one GeoTIFF each). z17: 32 -> 239k tiles, 16 -> 183k,
+                               # 8 -> 156k (fewer wasted outside coverage, but 2442 files): 16 is the balance
+conns     = 16                 # start: 16 measured fastest (135 tiles/s); the host's 64 is for its aerial cache
+max_conns = 16                 # 32 was no faster on this cache (16 ~135 tiles/s): cap here; TileGate backs off on errors
+dest      = "data/australia/lidar"
+licence   = "CC BY 4.0 - State of Queensland"
+home      = "https://spatial-img.information.qld.gov.au/arcgis/rest/services/Elevation/QldDem/ImageServer"
+
+[source.esa-worldcover]
+title     = "ESA WorldCover 2021 v200 land cover, 10 m, all of Australia (128 land tiles): tree/scrub tint in topo prints, offline"
+kind      = "url"
+base      = "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_"
+files     = [
+  "S45E144_Map.tif",
+  "S45E147_Map.tif",
+  "S42E141_Map.tif",
+  "S42E144_Map.tif",
+  "S42E147_Map.tif",
+  "S39E135_Map.tif",
+  "S39E138_Map.tif",
+  "S39E141_Map.tif",
+  "S39E144_Map.tif",
+  "S39E147_Map.tif",
+  "S39E150_Map.tif",
+  "S36E114_Map.tif",
+  "S36E117_Map.tif",
+  "S36E120_Map.tif",
+  "S36E123_Map.tif",
+  "S36E132_Map.tif",
+  "S36E135_Map.tif",
+  "S36E138_Map.tif",
+  "S36E141_Map.tif",
+  "S36E144_Map.tif",
+  "S36E147_Map.tif",
+  "S36E150_Map.tif",
+  "S33E114_Map.tif",
+  "S33E117_Map.tif",
+  "S33E120_Map.tif",
+  "S33E123_Map.tif",
+  "S33E126_Map.tif",
+  "S33E129_Map.tif",
+  "S33E132_Map.tif",
+  "S33E135_Map.tif",
+  "S33E138_Map.tif",
+  "S33E141_Map.tif",
+  "S33E144_Map.tif",
+  "S33E147_Map.tif",
+  "S33E150_Map.tif",
+  "S33E153_Map.tif",
+  "S30E111_Map.tif",
+  "S30E114_Map.tif",
+  "S30E117_Map.tif",
+  "S30E120_Map.tif",
+  "S30E123_Map.tif",
+  "S30E126_Map.tif",
+  "S30E129_Map.tif",
+  "S30E132_Map.tif",
+  "S30E135_Map.tif",
+  "S30E138_Map.tif",
+  "S30E141_Map.tif",
+  "S30E144_Map.tif",
+  "S30E147_Map.tif",
+  "S30E150_Map.tif",
+  "S30E153_Map.tif",
+  "S27E111_Map.tif",
+  "S27E114_Map.tif",
+  "S27E117_Map.tif",
+  "S27E120_Map.tif",
+  "S27E123_Map.tif",
+  "S27E126_Map.tif",
+  "S27E129_Map.tif",
+  "S27E132_Map.tif",
+  "S27E135_Map.tif",
+  "S27E138_Map.tif",
+  "S27E141_Map.tif",
+  "S27E144_Map.tif",
+  "S27E147_Map.tif",
+  "S27E150_Map.tif",
+  "S27E153_Map.tif",
+  "S24E111_Map.tif",
+  "S24E114_Map.tif",
+  "S24E117_Map.tif",
+  "S24E120_Map.tif",
+  "S24E123_Map.tif",
+  "S24E126_Map.tif",
+  "S24E129_Map.tif",
+  "S24E132_Map.tif",
+  "S24E135_Map.tif",
+  "S24E138_Map.tif",
+  "S24E141_Map.tif",
+  "S24E144_Map.tif",
+  "S24E147_Map.tif",
+  "S24E150_Map.tif",
+  "S24E153_Map.tif",
+  "S21E114_Map.tif",
+  "S21E117_Map.tif",
+  "S21E120_Map.tif",
+  "S21E123_Map.tif",
+  "S21E126_Map.tif",
+  "S21E129_Map.tif",
+  "S21E132_Map.tif",
+  "S21E135_Map.tif",
+  "S21E138_Map.tif",
+  "S21E141_Map.tif",
+  "S21E144_Map.tif",
+  "S21E147_Map.tif",
+  "S21E150_Map.tif",
+  "S18E117_Map.tif",
+  "S18E120_Map.tif",
+  "S18E123_Map.tif",
+  "S18E126_Map.tif",
+  "S18E129_Map.tif",
+  "S18E132_Map.tif",
+  "S18E135_Map.tif",
+  "S18E138_Map.tif",
+  "S18E141_Map.tif",
+  "S18E144_Map.tif",
+  "S18E147_Map.tif",
+  "S18E150_Map.tif",
+  "S15E120_Map.tif",
+  "S15E123_Map.tif",
+  "S15E126_Map.tif",
+  "S15E129_Map.tif",
+  "S15E132_Map.tif",
+  "S15E135_Map.tif",
+  "S15E141_Map.tif",
+  "S15E144_Map.tif",
+  "S12E114_Map.tif",
+  "S12E117_Map.tif",
+  "S12E120_Map.tif",
+  "S12E123_Map.tif",
+  "S12E126_Map.tif",
+  "S12E129_Map.tif",
+  "S12E132_Map.tif",
+  "S12E135_Map.tif",
+  "S12E138_Map.tif",
+  "S12E141_Map.tif",
+  "S12E144_Map.tif",
+  "S12E147_Map.tif",
+  "S12E150_Map.tif",
+  "S12E153_Map.tif",
+]
+dest      = "data/australia/worldcover"
+max_conns = 32
+licence   = "CC BY 4.0 - (c) ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium"
+home      = "https://esa-worldcover.org"
+est_gb    = 8
+
+# ---------------------------------------------------------------------------------------------------------------
+# SERVER NOTES - known quirks. Comments only; lmap ignores them.
+#
+# spatial-img.information.qld.gov.au (QLD Basemaps ImageServer: aerial-tsv-latest, sat-qld-2m4)
+#   Quirk: LatestStateProgram is a MOSAIC of separate capture projects (Townsville 2019-22
+#     SISP flights + Planet 2017 fill): hard colour/season seams on sheets. Re-fetching won't fix it. Newer flights
+#     (e.g. Townsville_LGA_2025_20cm, listed in Imagery/ImageryFootprint) are not public until ~3 years after
+#     capture. Seamless alternative: Basemaps/LatestSatelliteWOS_AllUsers = Planet 2017 Q3 only, 2.4 m (softer, older).
+#   Outages happen (the Basemaps folder lists no services; tiles answer 404/empty). lmap refuses an all-empty
+#     result ("no imagery at all ... likely a server outage"). Check: curl the Basemaps ?f=json listing;
+#     healthy = it names LatestStateProgram_AllUsers.
+#   Quirk: answers ~1.0 s per tile when loaded (normal ~0.05 s); lmap drops connections 64 -> 48 itself.
+

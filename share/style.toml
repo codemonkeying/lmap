@@ -1,0 +1,48 @@
+# lmap map style: the ONE place for symbol sizes, line widths, colours, dashes and legend names.
+# Every area and every sheet uses these. Override any key in ~/.config/lmap/config.toml under [style]
+# (e.g. [style] symbol_mm = 2.5, or [style.line.pipeline] colour = "0,0,0"). Precedence: config > this file.
+# Roads keep their own widths (by road class); everything else uses line_mm unless a row sets width.
+# Colours "R,G,B" or "R,G,B,A"; dash = [on, off, ...] mm, [] = solid.
+
+symbol_mm = 1.0          # every point symbol (water points, gates, power towers/poles, police, ...)
+peak_scale = 1.0         # summit triangles: symbol_mm x this (1 = same size as every symbol)
+line_mm = 0.2            # every non-road line (watercourses, tracks, power, pipelines, fences)
+text_pt = 5.7            # every other name: peaks, heights, contour numbers, roads, creeks (5.7 pt = 2 mm)
+place_pt = 8.5           # town / place names (8.5 pt = 3 mm)
+halo_mm = 0.15           # white outline behind names (0 = none: names don't wipe out contours)
+
+[line.watercourse]
+colour = "40,110,220"
+dash = []
+legend = "Watercourse (flows all year)"
+
+[line.watercourse_dry]
+colour = "40,110,220"
+dash = [2.0, 1.0]
+legend = "Watercourse (not all year)"
+
+[line.track]
+colour = "200,150,0"
+dash = [1.5, 0.25]
+legend = "Track"
+
+[line.track_4wd]
+colour = "200,150,0"
+dash = [0.8, 0.25]
+legend = "4WD track"
+
+[line.power]
+colour = "200,0,0"
+dash = []
+legend = "Power line"
+
+[line.pipeline]
+colour = "220,0,180"
+dash = [2.0, 0.6, 0.4, 0.6]       # dash-dot
+legend = "Pipeline"
+underground = false               # true = also draw pipelines tagged underground
+
+[line.fence]
+colour = "0,0,0"
+dash = [0.3, 0.6]
+legend = "Fence"

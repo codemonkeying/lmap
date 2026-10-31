@@ -1,0 +1,177 @@
+{
+ "about": "Measured accuracy of map sources (kind=source: the data vs ground truth, per region) and of lmap's own drawing (kind=plot: printed symbol vs its source data, in mm on paper so it holds at any scale). Unlisted source/region = NOT VERIFIED. `lmap verify <map> --yes` adds plot entries to <root>/accuracy.json (merged with this file).",
+ "entries": [
+  {
+   "kind": "source",
+   "layer": "roads",
+   "source": "qld-roads-state",
+   "region": [
+    146.772,
+    -19.287,
+    146.828,
+    -19.233
+   ],
+   "place": "Townsville",
+   "vs": "QLD cadastre road reserves (surveyed parcels, <=0.5 m)",
+   "n": 19747,
+   "shift_e_m": 0.0,
+   "shift_n_m": -0.2,
+   "median_m": 0.8,
+   "p90_m": 5.5,
+   "date": "2026-10-19",
+   "by": "cl/acc/acc.py",
+   "check": "vs surveyed QLD cadastre reserves"
+  },
+  {
+   "kind": "source",
+   "layer": "roads",
+   "source": "osm-au",
+   "region": [
+    146.772,
+    -19.287,
+    146.828,
+    -19.233
+   ],
+   "place": "Townsville",
+   "vs": "QLD cadastre road reserves (surveyed parcels, <=0.5 m)",
+   "n": 19997,
+   "shift_e_m": 0.8,
+   "shift_n_m": 0.5,
+   "median_m": 1.5,
+   "p90_m": 6.8,
+   "date": "2026-10-19",
+   "by": "cl/acc/acc.py",
+   "check": "vs surveyed QLD cadastre reserves"
+  },
+  {
+   "kind": "stated",
+   "layer": "contours",
+   "source": "qld-contours-state",
+   "region": [
+    146.772,
+    -19.287,
+    146.843,
+    -19.233
+   ],
+   "place": "Townsville",
+   "vs": "supplier metadata (elev_accuracy_m, LiDAR 2018)",
+   "vertical_m": 0.3,
+   "date": "2026-10-19",
+   "by": "qld-contours.gpkg elev_accuracy_m"
+  },
+  {
+   "kind": "plot",
+   "layer": "watercourses",
+   "ref": "qld-surface-water-state",
+   "place": "Townsville A4 1:25k topo, lmap 0.33",
+   "n": 950,
+   "shift_e_mm": 0.004,
+   "shift_n_mm": -0.04,
+   "median_mm": 0.048,
+   "p90_mm": 0.144,
+   "recovery": 0.92,
+   "date": "2026-10-19",
+   "by": "cl/acc/acc3b.py"
+  },
+  {
+   "kind": "source",
+   "layer": "roads",
+   "source": "nsw-roads-state",
+   "region": [
+    151.65,
+    -32.98,
+    151.82,
+    -32.86
+   ],
+   "place": "Newcastle",
+   "vs": "NSW cadastre road centrelines (DCDB road reserve centre; accuracy not published, not ground survey)",
+   "check": "vs NSW cadastre centrelines, not ground survey",
+   "n": 125378,
+   "shift_e_m": 0.1,
+   "shift_n_m": 0.2,
+   "median_m": 0.3,
+   "p90_m": 6.0,
+   "selftest_shift_m": [
+    10.1,
+    -5.8
+   ],
+   "date": "2026-10-20",
+   "by": "cl/acc/nswroads.py"
+  },
+  {
+   "kind": "source",
+   "layer": "roads",
+   "source": "osm-au",
+   "region": [
+    151.65,
+    -32.98,
+    151.82,
+    -32.86
+   ],
+   "place": "Newcastle",
+   "vs": "NSW cadastre road centrelines (DCDB road reserve centre; accuracy not published, not ground survey)",
+   "check": "vs NSW cadastre centrelines, not ground survey",
+   "n": 60862,
+   "shift_e_m": 0.0,
+   "shift_n_m": 0.2,
+   "median_m": 0.3,
+   "p90_m": 5.3,
+   "selftest_shift_m": [
+    10.7,
+    -6.2
+   ],
+   "date": "2026-10-20",
+   "by": "cl/acc/nswroads.py"
+  },
+  {
+   "kind": "source",
+   "layer": "roads",
+   "source": "nsw-roads-state",
+   "region": [
+    150.22,
+    -33.76,
+    150.38,
+    -33.5
+   ],
+   "place": "Blue Mountains (Katoomba-Leura + bush N)",
+   "vs": "NSW cadastre road centrelines (DCDB road reserve centre; accuracy not published, not ground survey)",
+   "check": "vs NSW cadastre centrelines, not ground survey",
+   "n": 56577,
+   "shift_e_m": 0.6,
+   "shift_n_m": -0.2,
+   "median_m": 1.0,
+   "p90_m": 14.2,
+   "selftest_shift_m": [
+    8.5,
+    -5.2
+   ],
+   "date": "2026-10-20",
+   "by": "cl/acc/nswroads.py"
+  },
+  {
+   "kind": "source",
+   "layer": "roads",
+   "source": "osm-au",
+   "region": [
+    150.22,
+    -33.76,
+    150.38,
+    -33.5
+   ],
+   "place": "Blue Mountains (Katoomba-Leura + bush N)",
+   "vs": "NSW cadastre road centrelines (DCDB road reserve centre; accuracy not published, not ground survey)",
+   "check": "vs NSW cadastre centrelines, not ground survey",
+   "n": 19797,
+   "shift_e_m": 0.1,
+   "shift_n_m": 0.2,
+   "median_m": 0.5,
+   "p90_m": 5.7,
+   "selftest_shift_m": [
+    10.6,
+    -5.9
+   ],
+   "date": "2026-10-20",
+   "by": "cl/acc/nswroads.py"
+  }
+ ]
+}

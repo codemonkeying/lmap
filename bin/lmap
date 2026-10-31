@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+"""lmap - offline map data library manager (Homelab CLI Contract v1)."""
+import argparse, calendar, contextlib, copy, fcntl, hashlib, http.client, itertools, json, math, os, random, re, shutil, signal, subprocess, sys, tempfile, threading, time, types
+import tomllib, urllib.error, urllib.parse, urllib.request
+from pathlib import Path
+
+VERSION = "1.0.0"
+HERE = __import__("pathlib").Path(__file__).resolve().parent.parent
+for _f in sorted((HERE / "lmaplib").glob("[0-9][0-9]_*.py")):    # one namespace: see lmaplib/__init__.py
+    exec(compile(_f.read_text(), str(_f), "exec"), globals())
+_f = None; del _f
+if "main" not in globals():
+    sys.exit(f"lmap: {HERE / 'lmaplib'} is missing - run lmap from the repo (install.sh symlinks it), not a copy of bin/lmap")
+
+if __name__ == "__main__":
+    sys.exit(main())
