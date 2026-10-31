@@ -70,7 +70,7 @@ known = [h[n] for n in h]
 tot = int(meta.get("total", 0)); waiting = max(tot - len(started), 0)
 avg = sum(known) / len(known) if known else 60
 if not h:
-    print("estimating…")
+    print("estimating...")
 else:
     left = max(runleft + [0]) if not waiting else (sum(runleft) + waiting * avg) / j
     left = max(left, max(runleft + [0]))
