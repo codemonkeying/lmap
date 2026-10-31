@@ -18,10 +18,10 @@ Linux, Python 3.11+, GDAL. `install.sh` checks the rest and `install.sh --deps` 
 lmap status                                  # data root, jobs, every dataset
 lmap data fetch qld-tides --yes              # small first download
 lmap tides --near=-19.26,146.82 --days 3     # offline from here on
-lmap job start dem-au-90m --yes              # big downloads run in the background, resumable
-lmap area create maggie --center=-19.14,146.84 --radius-km 6 --yes   # QGIS project for any box
+lmap job start dem-au-90m --yes              # elevation model (DEM); big downloads run in the background, resumable
+lmap area create magnetic-is --center=-19.14,146.84 --radius-km 6 --yes   # QGIS project for any box
 lmap map --place "Mount Isa" --scale 50k --yes   # printable topo sheet (PDF)
-lmap export create /media/stick --yes        # copy for USB, phone (MBTiles) or ATAK
+lmap export create /media/stick --yes        # copy for USB, phone (MBTiles) or ATAK (Android Team Awareness Kit)
 ```
 
 `lmap <command> --help` for the rest.
