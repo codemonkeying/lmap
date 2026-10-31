@@ -2,7 +2,7 @@
 
 Offline map library for when the internet's gone. One CLI downloads, resumes, shrinks and indexes the datasets in `sources.toml` into one data folder, then builds QGIS projects, printable topo sheets and phone maps from it.
 
-The catalog is Australian (national plus QLD, NSW, TAS, WA layers). The data isn't in the repo, only the recipe.
+The catalog is Australian (national plus QLD, NSW, SA, TAS, WA layers). The data isn't in the repo, only the recipe.
 
 ## Install
 
@@ -26,7 +26,7 @@ lmap export create /media/stick --yes        # copy for USB, phone (MBTiles) or 
 
 `lmap <command> --help` for the rest.
 
-Built for scripts and agents: every command takes `--json`, `--dry-run` and `--yes`, never prompts, and errors are one JSON line on stderr. Exit codes: `0` ok, `1` fail, `2` bad usage, `4` not found, `5` needs `--yes`, `6` network.
+Built for scripts and agents: every command takes `--json`, `--dry-run` and `--yes`. With `--yes` or `--json` it never prompts (on a terminal without them, changes ask y/N first). Errors are one JSON line on stderr. Exit codes: `0` ok, `1` fail, `2` bad usage, `4` not found, `5` needs `--yes`, `6` network, `75` stopped (resumable), `130` aborted.
 
 ## Tests
 
